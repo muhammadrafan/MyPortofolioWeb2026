@@ -1,0 +1,87 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Menggunakan PostgreSQL sesuai setup Anda
+datasource db {
+  provider = "postgresql"
+  // url      = env("DATABASE_URL")
+}
+
+// 1. Tabel Akses Login
+model Admin {
+  id       Int    @id @default(autoincrement())
+  email    String @unique
+  password String // Nanti akan kita hash menggunakan bcrypt
+}
+
+// 2. Section Home (Data Diri Utama)
+model Profile {
+  id             Int     @id @default(autoincrement())
+  name           String
+  tagline        String
+  summary        String  @db.Text
+  profilePicture String?
+
+  // Kolom baru untuk Tech Stack
+  techStack String? @db.Text
+
+  email       String?
+  linkedinUrl String?
+  githubUrl   String?
+}
+
+// 3. Custom Section (Kategori Utama)
+model Section {
+  id    Int           @id @default(autoincrement())
+  name  String // Contoh: "Working Experience", "Education"
+  order Int           @default(0)
+  items SectionItem[]
+}
+
+// 4. Payung Utama (Perusahaan / Institusi)
+model SectionItem {
+  id        Int     @id @default(autoincrement())
+  sectionId Int
+  section   Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  title String // Contoh: "Telkom Indonesia"
+  order Int    @default(0)
+
+  // Relasi ke peran-peran di bawah perusahaan ini
+  subItems SectionSubItem[]
+}
+
+// 5. Detail Peran & Kegiatan (Jabatan Spesifik)
+model SectionSubItem {
+  id            Int         @id @default(autoincrement())
+  sectionItemId Int
+  sectionItem   SectionItem @relation(fields: [sectionItemId], references: [id], onDelete: Cascade)
+
+  subtitle String? // Contoh: "Data Analyst (Contract)"
+  timeline String? // Contoh: "01/2026 - 07/2026"
+  content  String  @db.Text // Contoh: "Mengelola inisiatif Asset Mapping 2025 dan rekonsiliasi data SAP..."
+  order    Int     @default(0)
+
+  // Relasi ke media/lampiran
+  attachments Attachment[]
+}
+
+// 6. Media / Lampiran (Foto kegiatan atau File PPT/PDF)
+model Attachment {
+  id               Int            @id @default(autoincrement())
+  sectionSubItemId Int
+  subItem          SectionSubItem @relation(fields: [sectionSubItemId], references: [id], onDelete: Cascade)
+
+  url   String // Link URL menuju file gambar atau dokumen
+  type  MediaType @default(IMAGE) // Menggunakan Enum di bawah
+  title String? // Contoh: "Presentasi Telkom Asset Parser-X" atau "Dokumentasi Lapangan"
+}
+
+// Enum untuk membedakan perlakuan UI terhadap file
+enum MediaType {
+  IMAGE
+  DOCUMENT
+}
