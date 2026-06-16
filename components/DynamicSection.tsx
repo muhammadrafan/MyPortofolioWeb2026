@@ -6,30 +6,18 @@ import Link from 'next/link';
 
 // ==========================================
 // HELPER: SORTING BERDASARKAN TIMELINE
-// Tujuan: Pengalaman yang masih berjalan ("Present")
-// selalu tampil paling atas, diikuti pengalaman
-// sebelumnya diurutkan dari yang paling baru (descending).
 // ==========================================
 const MONTH_MAP: Record<string, number> = {
   jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
   jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
-  // varian penulisan Indonesia
   mei: 4, agu: 7, des: 11,
 };
 
 function getTimelineEndValue(timeline?: string): number {
   if (!timeline) return -Infinity;
-
-  // Ambil bagian akhir dari rentang waktu, mis. "Aug 2025 - Jan 2026" -> "Jan 2026"
   const parts = timeline.split(/[-–—]/).map((p) => p.trim());
   const endPart = parts[parts.length - 1] || '';
-
-  // Masih berjalan -> nilai tertinggi agar selalu di urutan teratas
-  if (/present|sekarang|now|current|ongoing/i.test(endPart)) {
-    return Infinity;
-  }
-
-  // Format "MMM YYYY" (mis. "Jan 2026")
+  if (/present|sekarang|now|current|ongoing/i.test(endPart)) return Infinity;
   const monthYear = endPart.match(/([A-Za-z]{3,})\s+(\d{4})/);
   if (monthYear) {
     const monthKey = monthYear[1].slice(0, 3).toLowerCase();
@@ -37,30 +25,25 @@ function getTimelineEndValue(timeline?: string): number {
     const year = parseInt(monthYear[2], 10);
     return year * 12 + month;
   }
-
-  // Fallback: hanya tahun, mis. "2026"
   const yearOnly = endPart.match(/(\d{4})/);
-  if (yearOnly) {
-    return parseInt(yearOnly[1], 10) * 12;
-  }
-
+  if (yearOnly) return parseInt(yearOnly[1], 10) * 12;
   return -Infinity;
 }
 
-// Urutkan array sub-item (atau item apa pun yang punya `timeline`) dari terbaru/ongoing ke terlama
 function sortByTimelineDesc(arr: any[] = []): any[] {
   return [...arr].sort(
     (a, b) => getTimelineEndValue(b?.timeline) - getTimelineEndValue(a?.timeline)
   );
 }
 
-// Nilai "terbaru" sebuah item, diambil dari subItem dengan timeline paling baru/ongoing
 function getItemLatestValue(item: any): number {
   if (!item?.subItems?.length) return -Infinity;
   return Math.max(...item.subItems.map((s: any) => getTimelineEndValue(s.timeline)));
 }
 
-// Helper hook untuk animasi saat di-scroll
+// ==========================================
+// HOOK: SCROLL REVEAL
+// ==========================================
 function useScrollReveal() {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -75,7 +58,6 @@ function useScrollReveal() {
       },
       { threshold: 0.15, rootMargin: '0px 0px -50px 0px' }
     );
-
     if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
   }, []);
@@ -83,11 +65,57 @@ function useScrollReveal() {
   return { ref, isVisible };
 }
 
-// Komponen Pratinjau Lampiran — gaya "file tile" personal
+// ==========================================
+// KOMPONEN: BANNER GAMBAR INSTITUSI
+// ==========================================
+function InstitutionFloatingImage({ imageUrl, title }: { imageUrl?: string | null; title: string }) {
+  if (!imageUrl) return null;
+
+  return (
+    <div className="absolute top-2 right-4 z-10">
+      <img
+        src={imageUrl}
+        alt={`Logo ${title}`}
+        className="max-h-16 max-w-[140px] object-contain rounded-md opacity-90"
+      />
+    </div>
+  );
+}
+
+function InstitutionBackground({ imageUrl, title }: { imageUrl?: string | null; title: string }) {
+  if (!imageUrl) return null;
+
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
+      {/* Gambar 1: drift dari kiri ke kanan */}
+      <img
+        src={imageUrl}
+        alt=""
+        aria-hidden="true"
+        className="absolute -left-8 top-1/2 -translate-y-1/2 h-36 w-auto object-contain
+                   opacity-[0.04] grayscale invert
+                   animate-drift-ltr"
+      />
+      {/* Gambar 2: drift dari kanan ke kiri, delay biar tidak sinkron */}
+      <img
+        src={imageUrl}
+        alt=""
+        aria-hidden="true"
+        className="absolute -right-8 bottom-1/4 h-28 w-auto object-contain
+                   opacity-[0.04] grayscale invert
+                   animate-drift-rtl [animation-delay:4s]"
+      />
+    </div>
+  );
+}
+// ==========================================
+// KOMPONEN: PRATINJAU LAMPIRAN
+// ==========================================
 function AttachmentThumbnail({ attachment, onClick }: { attachment: any; onClick: () => void }) {
-  const imgUrl = attachment.type === 'IMAGE'
-    ? attachment.url
-    : attachment.url.replace(/\.pdf$/i, '.jpg');
+  const imgUrl =
+    attachment.type === 'IMAGE'
+      ? attachment.url
+      : attachment.url.replace(/\.pdf$/i, '.jpg');
 
   return (
     <button
@@ -117,12 +145,12 @@ function AttachmentThumbnail({ attachment, onClick }: { attachment: any; onClick
   );
 }
 
+// ==========================================
+// KOMPONEN UTAMA
+// ==========================================
 export default function DynamicSection({ section, index }: { section: any; index: number }) {
   const { ref, isVisible } = useScrollReveal();
 
-  // ==========================================
-  // STATE UNTUK LIGHTBOX (POP-UP)
-  // ==========================================
   const [viewingAtt, setViewingAtt] = useState<any>(null);
   const [pdfPage, setPdfPage] = useState(1);
   const [maxPage, setMaxPage] = useState<number | null>(null);
@@ -142,11 +170,8 @@ export default function DynamicSection({ section, index }: { section: any; index
     setPdfPage((p) => Math.max(1, p - 1));
   };
 
-  // Selang-seling posisi glow & dekorasi (bukan warna bg flat lagi)
   const isEven = index % 2 === 0;
 
-  // Urutkan item (mis. per perusahaan) berdasarkan timeline terbaru/ongoing,
-  // baru ambil 3 teratas untuk ditampilkan di section.
   const sortedItems = [...section.items].sort(
     (a: any, b: any) => getItemLatestValue(b) - getItemLatestValue(a)
   );
@@ -156,23 +181,22 @@ export default function DynamicSection({ section, index }: { section: any; index
   if (itemCount === 0) return null;
 
   const richTextClass =
-    "text-slate-400 text-sm leading-relaxed [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5 [&_li]:mt-1 [&_a]:text-emerald-400 [&_a]:hover:text-emerald-300 [&_a]:underline";
+    'text-slate-400 text-sm leading-relaxed [&_ul]:list-disc [&_ul]:ml-5 [&_ol]:list-decimal [&_ol]:ml-5 [&_li]:mt-1 [&_a]:text-emerald-400 [&_a]:hover:text-emerald-300 [&_a]:underline';
 
   return (
     <>
-   
       <section id={`section-${section.id}`} className="relative overflow-hidden bg-[#0a0f1a] py-24">
-        {/* Grid background — selaras dengan Hero */}
+        {/* Grid background */}
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(79,79,79,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(79,79,79,0.06)_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_50%,#000_40%,transparent_100%)]" />
 
-        {/* Glow blob blue → emerald, bergeser sisi tiap section */}
+        {/* Glow blob */}
         <div
           className={`pointer-events-none absolute h-80 w-80 rounded-full bg-gradient-to-br from-blue-500/10 to-emerald-500/10 blur-[110px] ${
             isEven ? '-left-32 top-10' : '-right-32 bottom-10'
           }`}
         />
 
-        {/* Garis pemisah halus antar section */}
+        {/* Garis pemisah */}
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-800/60 to-transparent" />
 
         <div
@@ -181,7 +205,7 @@ export default function DynamicSection({ section, index }: { section: any; index
             isVisible ? 'translate-y-0 opacity-100' : 'translate-y-16 opacity-0'
           }`}
         >
-          {/* Header section — gaya terminal/personal */}
+          {/* Header section */}
           <div className="mb-14 flex items-center gap-4">
             <span className="font-mono text-xs tracking-widest text-slate-600">
               {String(index + 1).padStart(2, '0')} //
@@ -195,23 +219,31 @@ export default function DynamicSection({ section, index }: { section: any; index
             <div className="h-px flex-1 bg-gradient-to-r from-slate-700/60 via-slate-800/30 to-transparent" />
           </div>
 
-          {/* KONDISI 1: JIKA JUMLAH ITEM HANYA 1 */}
+          {/* ==========================================
+              KONDISI 1: ITEM TUNGGAL
+          ========================================== */}
           {itemCount === 1 && (
             <div className="flex flex-col gap-8">
               {items.map((item: any) => (
                 <div
                   key={item.id}
-                  className="overflow-hidden rounded-2xl border border-slate-800/60 bg-slate-900/40 backdrop-blur-sm transition-all duration-500 hover:border-blue-500/20 hover:shadow-[0_0_30px_rgba(59,130,246,0.08)]"
+                  className="relative overflow-hidden rounded-2xl border border-slate-800/60 bg-slate-900/40 backdrop-blur-sm transition-all duration-500 hover:border-blue-500/20 hover:shadow-[0_0_30px_rgba(59,130,246,0.08)]"
                 >
-                  {/* title bar ala terminal window */}
-                  <div className="flex items-center gap-2 border-b border-slate-800/60 bg-slate-950/40 px-5 py-3">
-                    <span className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
-                    <span className="h-2.5 w-2.5 rounded-full bg-amber-500/60" />
-                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/60" />
-                    <span className="ml-2 truncate font-mono text-xs text-slate-500">
-                      ~/{String(section.name ?? 'item').toLowerCase().replace(/\s+/g, '-')}/{item.title}
-                    </span>
-                  </div>
+                    <InstitutionBackground imageUrl={item.imageUrl} title={item.title} />
+                 {/* Title bar */}
+                    <div className="relative flex items-center gap-2 border-b border-slate-800/60 bg-slate-950/40 px-5 py-3">
+                      <span className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-amber-500/60" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/60" />
+                      <span className="ml-2 truncate font-mono text-xs text-slate-500 max-w-[55%]">
+                        ~/{String(section.name ?? 'item').toLowerCase().replace(/\s+/g, '-')}/{item.title}
+                      </span>
+
+                      {/* Logo mengambang di kanan */}
+                      <InstitutionFloatingImage imageUrl={item.imageUrl} title={item.title} />
+                    </div>
+
+                    {/* Hapus <InstitutionBanner> yang ada di sini */}
 
                   <div className="space-y-8 p-6 md:p-8">
                     {sortByTimelineDesc(item.subItems).map((sub: any, si: number) => {
@@ -227,11 +259,11 @@ export default function DynamicSection({ section, index }: { section: any; index
                           }`}
                           style={{ transitionDelay: `${si * 120}ms` }}
                         >
-                          {/* garis timeline */}
+                          {/* Garis timeline */}
                           {!isLast && (
                             <span className="absolute left-[5px] top-3 -bottom-8 w-px bg-gradient-to-b from-emerald-500/40 via-slate-700/40 to-transparent" />
                           )}
-                          {/* dot — entri terbaru berdenyut */}
+                          {/* Dot */}
                           <span
                             className={`absolute left-0 top-1.5 h-3 w-3 rounded-full ${
                               si === 0
@@ -250,7 +282,7 @@ export default function DynamicSection({ section, index }: { section: any; index
                             dangerouslySetInnerHTML={{ __html: sub.content }}
                           />
 
-                          {/* Lampiran (Maksimal 2) */}
+                          {/* Lampiran */}
                           {attachmentsToDisplay.length > 0 && (
                             <div className="mt-8 pt-4 flex flex-wrap items-center gap-3">
                               {attachmentsToDisplay.map((att: any) => (
@@ -260,7 +292,6 @@ export default function DynamicSection({ section, index }: { section: any; index
                                   onClick={() => openLightbox(att)}
                                 />
                               ))}
-
                               {hasMoreAttachments && (
                                 <Link
                                   href={`/item/${item.id}`}
@@ -281,9 +312,15 @@ export default function DynamicSection({ section, index }: { section: any; index
             </div>
           )}
 
-          {/* KONDISI 2 & 3: JIKA JUMLAH ITEM 2 ATAU 3 */}
+          {/* ==========================================
+              KONDISI 2 & 3: GRID MULTI-ITEM
+          ========================================== */}
           {itemCount > 1 && (
-            <div className={`grid gap-6 ${itemCount === 2 ? 'md:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
+            <div
+              className={`grid gap-6 ${
+                itemCount === 2 ? 'md:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+              }`}
+            >
               {items.map((item: any, i: number) => {
                 const sortedSubItems = sortByTimelineDesc(item.subItems);
                 const newestSub = sortedSubItems[0];
@@ -297,16 +334,24 @@ export default function DynamicSection({ section, index }: { section: any; index
                     }`}
                     style={{ transitionDelay: `${i * 100}ms` }}
                   >
-                    {/* garis aksen gradasi atas, muncul saat hover */}
+                      <InstitutionBackground imageUrl={item.imageUrl} title={item.title} />
+                    {/* Garis aksen atas */}
                     <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-blue-500/0 via-emerald-500/70 to-blue-500/0 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
 
-                    {/* title bar ala terminal window */}
-                    <div className="flex items-center gap-2 border-b border-slate-800/60 px-5 py-3">
-                      <span className="h-2 w-2 rounded-full bg-slate-700 transition-colors duration-300 group-hover:bg-red-500/60" />
-                      <span className="h-2 w-2 rounded-full bg-slate-700 transition-colors duration-300 group-hover:bg-amber-500/60" />
-                      <span className="h-2 w-2 rounded-full bg-slate-700 transition-colors duration-300 group-hover:bg-emerald-500/60" />
-                      <span className="ml-2 truncate font-mono text-[11px] text-slate-500">{item.title}</span>
-                    </div>
+                    {/* Title bar */}
+                      <div className="relative flex items-center gap-2 border-b border-slate-800/60 px-5 py-3">
+                        <span className="h-2 w-2 rounded-full bg-slate-700 transition-colors duration-300 group-hover:bg-red-500/60" />
+                        <span className="h-2 w-2 rounded-full bg-slate-700 transition-colors duration-300 group-hover:bg-amber-500/60" />
+                        <span className="h-2 w-2 rounded-full bg-slate-700 transition-colors duration-300 group-hover:bg-emerald-500/60" />
+                        <span className="ml-2 truncate font-mono text-[11px] text-slate-500 max-w-[50%]">
+                          {item.title}
+                        </span>
+
+                        {/* Logo mengambang di kanan */}
+                        <InstitutionFloatingImage imageUrl={item.imageUrl} title={item.title} />
+                      </div>
+
+                      {/* Hapus <InstitutionBanner> yang ada di sini */}
 
                     <div className="flex-1 p-5">
                       <h3 className="mb-4 text-xl font-bold line-clamp-2">
@@ -320,7 +365,6 @@ export default function DynamicSection({ section, index }: { section: any; index
                           <span className="absolute left-0 top-1.5 h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.55)]" />
                           <h4 className="text-sm font-semibold text-white">{newestSub.subtitle}</h4>
                           <span className="mb-2 block font-mono text-xs text-emerald-400">{newestSub.timeline}</span>
-
                           <div
                             className={`${richTextClass} line-clamp-3`}
                             dangerouslySetInnerHTML={{ __html: newestSub.content }}
@@ -335,13 +379,18 @@ export default function DynamicSection({ section, index }: { section: any; index
                       <div>
                         {firstAttachment ? (
                           <div className="flex items-center gap-2">
-                            <AttachmentThumbnail attachment={firstAttachment} onClick={() => openLightbox(firstAttachment)} />
+                            <AttachmentThumbnail
+                              attachment={firstAttachment}
+                              onClick={() => openLightbox(firstAttachment)}
+                            />
                             {newestSub.attachments.length > 1 && (
-                              <span className="font-mono text-xs text-slate-500">+{newestSub.attachments.length - 1}</span>
+                              <span className="font-mono text-xs text-slate-500">
+                                +{newestSub.attachments.length - 1}
+                              </span>
                             )}
                           </div>
                         ) : (
-                          <span className="text-xs text-slate-600">Tanpa Lampiran</span>
+                          <span className="text-xs text-slate-600">Hello World!</span>
                         )}
                       </div>
 
@@ -358,6 +407,7 @@ export default function DynamicSection({ section, index }: { section: any; index
             </div>
           )}
 
+          {/* Tombol lihat semua */}
           {section.items.length > 3 && (
             <div className="mt-12 flex justify-center">
               <Link
@@ -372,23 +422,16 @@ export default function DynamicSection({ section, index }: { section: any; index
         </div>
       </section>
 
-      
-      {/* ========================================== */}
-      {/* MODAL LIGHTBOX (GAMBAR / PDF)               */}
-      {/* ========================================== */}
+      {/* ==========================================
+          MODAL LIGHTBOX
+      ========================================== */}
       {viewingAtt && (
-        <div 
+        <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-[#020617]/95 backdrop-blur-md"
-          // UPDATE 1: Fungsi untuk menutup pop-up ketika area gelap diklik
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setViewingAtt(null);
-          }}
-          // Menangkap tombol "Escape" pada keyboard
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') setViewingAtt(null);
-          }}
-          tabIndex={-1} // Agar elemen ini bisa menangkap event onKeyDown
-          autoFocus   // Otomatis fokus agar tombol Esc langsung berfungsi
+          onClick={(e) => { if (e.target === e.currentTarget) setViewingAtt(null); }}
+          onKeyDown={(e) => { if (e.key === 'Escape') setViewingAtt(null); }}
+          tabIndex={-1}
+          autoFocus
         >
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(79,79,79,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(79,79,79,0.06)_1px,transparent_1px)] bg-[size:32px_32px]" />
 
@@ -400,72 +443,66 @@ export default function DynamicSection({ section, index }: { section: any; index
             &times;
           </button>
 
-          {/* UPDATE: tambahkan pt-24 agar gambar tidak collide dengan judul, 
-            dan hapus justify-center supaya konten "menempel" di bawah header */}
-        <div className="relative z-10 w-full max-w-5xl h-[85vh] flex flex-col items-center p-4 pt-24 md:pt-28 pointer-events-none">
-
-        {/* Header Keterangan Modal */}
-        <div className="absolute top-6 left-8 text-white z-10 pointer-events-auto">
-            <h3 className="font-mono text-xl">
-            <span className="text-emerald-400">&gt;_</span> {viewingAtt.title}
-            </h3>
-            {viewingAtt.type === "DOCUMENT" && (
-            <div className="mt-3 flex items-center gap-3">
-                <p className="font-mono text-sm text-slate-400 bg-slate-900/80 inline-block px-3 py-1 rounded-full border border-slate-700/60">
-                Halaman {pdfPage} {maxPage ? `/ ${maxPage}` : ''}
-                </p>
-            </div>
-            )}
-        </div>
-
-        {/* Area Penampil Berkas */}
-        {/* UPDATE: flex-1 menggantikan h-full + mt-12, mengisi sisa ruang setelah pt-24 */}
-        <div className="flex items-center gap-6 w-full flex-1 justify-center pointer-events-auto">
-
-            {/* Panah Kiri (Jika PDF) */}
-            {viewingAtt.type === "DOCUMENT" && (
-            <button
-                onClick={handlePrevPage}
-                disabled={pdfPage === 1}
-                className="p-4 bg-slate-900/80 text-slate-300 rounded-full hover:bg-slate-800 hover:text-emerald-400 disabled:opacity-0 transition-all duration-300 border border-slate-700/60 hover:border-emerald-500/30"
-            >
-                &larr;
-            </button>
-            )}
-
-            {/* Tampilan Visual (Gambar / Konversi PDF) */}
-            <div className="relative h-full max-w-full flex items-center justify-center">
-            <div className="pointer-events-none absolute -inset-2 rounded-xl bg-gradient-to-br from-blue-500/15 to-emerald-500/15 blur-2xl" />
-            <img
-                src={
-                viewingAtt.type === "IMAGE"
-                    ? viewingAtt.url
-                    : viewingAtt.url.replace('/upload/', `/upload/pg_${pdfPage}/`).replace(/\.pdf$/i, '.jpg')
-                }
-                alt={`Preview - Halaman ${pdfPage}`}
-                // UPDATE: max-h dibatasi (bukan max-h-full) agar selalu ada jarak aman dari header & bawah
-                className="relative max-h-[65vh] md:max-h-[70vh] max-w-full object-contain rounded-lg shadow-[0_0_60px_rgba(0,0,0,0.55)] border border-slate-800"
-                onError={() => {
-                if (viewingAtt.type === "DOCUMENT") {
-                    setMaxPage(pdfPage - 1);
-                    setPdfPage(pdfPage - 1);
-                }
-                }}
-            />
+          <div className="relative z-10 w-full max-w-5xl h-[85vh] flex flex-col items-center p-4 pt-24 md:pt-28 pointer-events-none">
+            {/* Header modal */}
+            <div className="absolute top-6 left-8 text-white z-10 pointer-events-auto">
+              <h3 className="font-mono text-xl">
+                <span className="text-emerald-400">&gt;_</span> {viewingAtt.title}
+              </h3>
+              {viewingAtt.type === 'DOCUMENT' && (
+                <div className="mt-3 flex items-center gap-3">
+                  <p className="font-mono text-sm text-slate-400 bg-slate-900/80 inline-block px-3 py-1 rounded-full border border-slate-700/60">
+                    Halaman {pdfPage} {maxPage ? `/ ${maxPage}` : ''}
+                  </p>
+                </div>
+              )}
             </div>
 
-            {/* Panah Kanan (Jika PDF) */}
-            {viewingAtt.type === "DOCUMENT" && (
-            <button
-                onClick={handleNextPage}
-                disabled={maxPage !== null && pdfPage >= maxPage}
-                className="p-4 bg-slate-900/80 text-slate-300 rounded-full hover:bg-slate-800 hover:text-emerald-400 disabled:opacity-0 transition-all duration-300 border border-slate-700/60 hover:border-emerald-500/30"
-            >
-                &rarr;
-            </button>
-            )}
-        </div>
-        </div>
+            {/* Area penampil */}
+            <div className="flex items-center gap-6 w-full flex-1 justify-center pointer-events-auto">
+              {/* Panah kiri */}
+              {viewingAtt.type === 'DOCUMENT' && (
+                <button
+                  onClick={handlePrevPage}
+                  disabled={pdfPage === 1}
+                  className="p-4 bg-slate-900/80 text-slate-300 rounded-full hover:bg-slate-800 hover:text-emerald-400 disabled:opacity-0 transition-all duration-300 border border-slate-700/60 hover:border-emerald-500/30"
+                >
+                  &larr;
+                </button>
+              )}
+
+              {/* Gambar / PDF */}
+              <div className="relative h-full max-w-full flex items-center justify-center">
+                <div className="pointer-events-none absolute -inset-2 rounded-xl bg-gradient-to-br from-blue-500/15 to-emerald-500/15 blur-2xl" />
+                <img
+                  src={
+                    viewingAtt.type === 'IMAGE'
+                      ? viewingAtt.url
+                      : viewingAtt.url.replace('/upload/', `/upload/pg_${pdfPage}/`).replace(/\.pdf$/i, '.jpg')
+                  }
+                  alt={`Preview - Halaman ${pdfPage}`}
+                  className="relative max-h-[65vh] md:max-h-[70vh] max-w-full object-contain rounded-lg shadow-[0_0_60px_rgba(0,0,0,0.55)] border border-slate-800"
+                  onError={() => {
+                    if (viewingAtt.type === 'DOCUMENT') {
+                      setMaxPage(pdfPage - 1);
+                      setPdfPage(pdfPage - 1);
+                    }
+                  }}
+                />
+              </div>
+
+              {/* Panah kanan */}
+              {viewingAtt.type === 'DOCUMENT' && (
+                <button
+                  onClick={handleNextPage}
+                  disabled={maxPage !== null && pdfPage >= maxPage}
+                  className="p-4 bg-slate-900/80 text-slate-300 rounded-full hover:bg-slate-800 hover:text-emerald-400 disabled:opacity-0 transition-all duration-300 border border-slate-700/60 hover:border-emerald-500/30"
+                >
+                  &rarr;
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </>

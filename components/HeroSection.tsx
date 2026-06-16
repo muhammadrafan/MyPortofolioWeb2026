@@ -270,7 +270,7 @@ export default function HeroSection({ profile }: ProfileProps) {
 
           <div className="mb-5 flex items-center gap-2 font-mono text-sm text-slate-500">
             <span className="text-slate-600">~/role$</span>
-            <span className="min-w-[140px] text-sky-400">{typedText}</span>
+            <span className=" text-sky-400">{typedText}</span>
             <span className="inline-block h-3.5 w-0.5 animate-[blink_0.8s_step-end_infinite] bg-sky-400 align-middle" />
           </div>
 

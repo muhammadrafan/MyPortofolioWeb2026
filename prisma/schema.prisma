@@ -47,10 +47,10 @@ model SectionItem {
   sectionId Int
   section   Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
-  title String // Contoh: "Telkom Indonesia"
-  order Int    @default(0)
+  title     String
+  imageUrl  String?  // ← BARU: URL foto institusi dari Cloudinary
+  order     Int    @default(0)
 
-  // Relasi ke peran-peran di bawah perusahaan ini
   subItems SectionSubItem[]
 }
 

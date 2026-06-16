@@ -43,3 +43,26 @@ body {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0; }
 }
+
+/* app/globals.css */
+
+@keyframes drift-ltr {
+  0%   { transform: translateX(-60px) translateY(0px); }
+  50%  { transform: translateX(0px)   translateY(-10px); }
+  100% { transform: translateX(-60px) translateY(0px); }
+}
+
+@keyframes drift-rtl {
+  0%   { transform: translateX(60px)  translateY(0px); }
+  50%  { transform: translateX(0px)   translateY(10px); }
+  100% { transform: translateX(60px)  translateY(0px); }
+}
+
+@layer utilities {
+  .animate-drift-ltr {
+    animation: drift-ltr 8s ease-in-out infinite;
+  }
+  .animate-drift-rtl {
+    animation: drift-rtl 8s ease-in-out infinite;
+  }
+}

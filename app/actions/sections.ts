@@ -40,10 +40,17 @@ export async function createSection(formData: FormData) {
 export async function createSectionItem(formData: FormData) {
   const sectionId = parseInt(formData.get("sectionId") as string);
   const title = formData.get("title") as string;
-  if (!sectionId || !title) return;
+  const imageUrl = formData.get("imageUrl") as string | null;
 
-  await prisma.sectionItem.create({ data: { sectionId, title } });
-  revalidatePath("/admin");
+  await prisma.sectionItem.create({
+    data: {
+      sectionId,
+      title,
+      imageUrl: imageUrl || null,
+    },
+  });
+
+  revalidatePath(`/admin/sections/${sectionId}`);
 }
 
 // ==========================================
@@ -56,13 +63,36 @@ export async function deleteSection(id: number) {
   revalidatePath("/admin");
 }
 
+// ==========================================
+// 4. UPDATE: Fungsi Edit Data (Section & Item) - Sub-item cukup edit langsung di form tanpa fungsi terpisah
+// ==========================================
+export async function updateSectionItem(formData: FormData) {
+  const id = parseInt(formData.get("id") as string);
+  const title = formData.get("title") as string;
+  const imageUrl = formData.get("imageUrl") as string | null;
+
+  const item = await prisma.sectionItem.update({
+    where: { id },
+    data: {
+      title,
+      // Kalau imageUrl kosong string, tetap pakai yang lama (dikirim dari client)
+      imageUrl: imageUrl || null,
+    },
+  });
+
+  revalidatePath(`/admin/sections/${item.sectionId}`);
+}
+
 export async function deleteSectionItem(id: number) {
+  const item = await prisma.sectionItem.findUnique({ where: { id } });
+
   await prisma.sectionItem.delete({ where: { id } });
-  revalidatePath("/admin");
+
+  revalidatePath(`/admin/sections/${item?.sectionId}`);
 }
 
 // ==========================================
-// 4. SUB-ITEM: Detail Peran & Kegiatan
+// 5. SUB-ITEM: Detail Peran & Kegiatan
 // ==========================================
 export async function createSectionSubItem(formData: FormData) {
   const sectionItemId = parseInt(formData.get("sectionItemId") as string);
@@ -108,7 +138,7 @@ export async function updateSectionSubItem(formData: FormData) {
 }
 
 // ==========================================
-// 5. ATTACHMENT: Lampiran Media / Dokumen
+// 6. ATTACHMENT: Lampiran Media / Dokumen
 // ==========================================
 export async function createAttachment(formData: FormData) {
   const sectionSubItemId = parseInt(formData.get("sectionSubItemId") as string);

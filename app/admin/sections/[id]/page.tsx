@@ -14,7 +14,8 @@ export default async function SectionDetailPage({ params }: { params: Promise<{ 
     where: { id: sectionId },
     include: {
       items: {
-        orderBy: { order: "asc" }
+        orderBy: { order: "asc" },
+        select: { id: true, title: true, imageUrl: true },
       }
     }
   });
