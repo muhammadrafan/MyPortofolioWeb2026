@@ -214,7 +214,7 @@ export default function HeroSection({ profile }: ProfileProps) {
   return (
     <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#0a0f1a] px-6 py-20">
       {/* Grid background */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(79,79,79,0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(79,79,79,0.15)_1px,transparent_1px)] bg-[size:28px_28px] [mask-image:radial-gradient(ellipse_80%_70%_at_50%_40%,#000_50%,transparent_100%)]" />
+      <div className="hidden md:flex absolute inset-0 bg-[linear-gradient(rgba(79,79,79,0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(79,79,79,0.15)_1px,transparent_1px)] bg-[size:28px_28px] [mask-image:radial-gradient(ellipse_80%_70%_at_50%_40%,#000_50%,transparent_100%)]" />
 
       <Particles />
 

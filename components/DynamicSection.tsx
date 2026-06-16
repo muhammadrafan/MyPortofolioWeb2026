@@ -86,7 +86,7 @@ function InstitutionBackground({ imageUrl, title }: { imageUrl?: string | null; 
   if (!imageUrl) return null;
 
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
+    <div className="hidden md:flex pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
       {/* Gambar 1: drift dari kiri ke kanan */}
       <img
         src={imageUrl}
