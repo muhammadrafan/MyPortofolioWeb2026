@@ -74,6 +74,8 @@ function InstitutionFloatingImage({ imageUrl, title }: { imageUrl?: string | nul
         <img
           src={imageUrl}
           alt={`Logo ${title}`}
+          loading="lazy"
+          decoding="async"
           className="max-h-10 max-w-[90px] object-contain"
         />
       </div>
@@ -91,6 +93,8 @@ function InstitutionBackground({ imageUrl, title }: { imageUrl?: string | null; 
         src={imageUrl}
         alt=""
         aria-hidden="true"
+        loading="lazy"
+        decoding="async"
         className="absolute -left-8 top-1/2 -translate-y-1/2 h-36 w-auto object-contain
                    opacity-[0.04] grayscale invert
                    animate-drift-ltr"
@@ -100,6 +104,8 @@ function InstitutionBackground({ imageUrl, title }: { imageUrl?: string | null; 
         src={imageUrl}
         alt=""
         aria-hidden="true"
+        loading="lazy"
+        decoding="async"
         className="absolute -right-8 bottom-1/4 h-28 w-auto object-contain
                    opacity-[0.04] grayscale invert
                    animate-drift-rtl [animation-delay:4s]"
@@ -116,7 +122,14 @@ function AttachmentThumbnail({ attachment, onClick }: { attachment: Attachment; 
       onClick={onClick}
       className="group relative h-24 w-36 flex-shrink-0 overflow-hidden rounded-lg border border-slate-800/70 bg-slate-900 text-left transition-all duration-300 hover:-translate-y-1 hover:border-blue-500/40 hover:shadow-[0_8px_24px_rgba(59,130,246,0.18)] focus:outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer"
     >
-      <img src={imgUrl} alt={attachment.title} className="h-full w-full object-cover opacity-75 transition-all duration-300 group-hover:scale-110 group-hover:opacity-100" onError={(e) => (e.currentTarget.style.display = 'none')} />
+      <img
+        src={imgUrl}
+        alt={attachment.title}
+        loading="lazy"
+        decoding="async"
+        className="h-full w-full object-cover opacity-75 transition-all duration-300 group-hover:scale-110 group-hover:opacity-100"
+        onError={(e) => (e.currentTarget.style.display = 'none')}
+      />
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/95 via-slate-950/50 to-transparent p-2">
         <p className="truncate font-mono text-[10px] text-slate-200">{attachment.title}</p>
       </div>
