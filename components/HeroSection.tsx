@@ -54,23 +54,19 @@ function useTypingEffect(words: string[], typingSpeed = 85, deletingSpeed = 42) 
 }
 
 function Particles() {
-  const [particles, setParticles] = useState<
+  const [particles] = useState<
     { id: number; left: string; top: string; duration: string; delay: string; dx: string; color: string }[]
-  >([]);
-
-  useEffect(() => {
-    setParticles(
-      Array.from({ length: 16 }, (_, i) => ({
-        id: i,
-        left: `${Math.random() * 100}%`,
-        top: `${30 + Math.random() * 70}%`,
-        duration: `${4 + Math.random() * 5}s`,
-        delay: `${Math.random() * 6}s`,
-        dx: `${(Math.random() - 0.5) * 60}px`,
-        color: Math.random() > 0.5 ? '#10b981' : '#3b82f6',
-      }))
-    );
-  }, []);
+  >(() =>
+    Array.from({ length: 16 }, (_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${30 + Math.random() * 70}%`,
+      duration: `${4 + Math.random() * 5}s`,
+      delay: `${Math.random() * 6}s`,
+      dx: `${(Math.random() - 0.5) * 60}px`,
+      color: Math.random() > 0.5 ? '#10b981' : '#3b82f6',
+    }))
+  );
 
   return (
     <div className="pointer-events-none absolute inset-0">
@@ -203,8 +199,34 @@ export default function HeroSection({ profile }: ProfileProps) {
   const roles = profile.tagline.split('|').map((t) => t.trim());
   const typedText = useTypingEffect(roles);
   const [mounted, setMounted] = useState(false);
+  const [showParticles, setShowParticles] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches
+  );
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+
+    const mediaQuery = window.matchMedia('(min-width: 768px)');
+    const handleChange = () => {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setShowParticles(mediaQuery.matches);
+    };
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleChange);
+    } else {
+      mediaQuery.addListener(handleChange);
+    }
+
+    return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', handleChange);
+      } else {
+        mediaQuery.removeListener(handleChange);
+      }
+    };
+  }, []);
 
   const nameParts = profile.name.split(' ');
   const firstName = nameParts[0];
@@ -216,7 +238,7 @@ export default function HeroSection({ profile }: ProfileProps) {
       {/* Grid background */}
       <div className="hidden md:flex absolute inset-0 bg-[linear-gradient(rgba(79,79,79,0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(79,79,79,0.15)_1px,transparent_1px)] bg-[size:28px_28px] [mask-image:radial-gradient(ellipse_80%_70%_at_50%_40%,#000_50%,transparent_100%)]" />
 
-      <Particles />
+      {showParticles && <Particles />}
 
       {/*
         Layout:
@@ -225,9 +247,7 @@ export default function HeroSection({ profile }: ProfileProps) {
         max-w-5xl supaya di 1920px tidak terlalu renggang
       */}
       <div
-        className={`relative z-10 flex w-full max-w-5xl flex-col items-center gap-10 transition-all duration-700 xl:flex-row xl:items-center xl:gap-12 ${
-          mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-        }`}
+        className="relative z-10 flex w-full max-w-5xl flex-col items-center gap-10 transition-all duration-700 xl:flex-row xl:items-center xl:gap-12 translate-y-0 opacity-100"
       >
         {/* LEFT — avatar + badge */}
         <div className="flex flex-shrink-0 flex-col items-center gap-4">
@@ -241,6 +261,8 @@ export default function HeroSection({ profile }: ProfileProps) {
                   <img
                     src={profile.profilePicture}
                     alt={profile.name}
+                    loading="lazy"
+                    decoding="async"
                     className="h-full w-full cursor-pointer rounded-full object-cover transition-transform duration-500 hover:scale-110"
                   />
                 ) : (
@@ -274,7 +296,7 @@ export default function HeroSection({ profile }: ProfileProps) {
             <span className="inline-block h-3.5 w-0.5 animate-[blink_0.8s_step-end_infinite] bg-sky-400 align-middle" />
           </div>
 
-          <div className="relative mb-5 w-full overflow-hidden rounded-xl border border-slate-800/70 bg-slate-900/50 px-5 py-4 backdrop-blur-sm transition-all duration-300 hover:scale-[1.02] hover:border-blue-500/30 hover:bg-slate-900/80 hover:shadow-[0_0_20px_rgba(59,130,246,0.15)] cursor-default">
+          <div className="relative mb-5 w-full overflow-hidden rounded-xl border border-slate-800/70 bg-slate-900/50 px-5 py-4 md:backdrop-blur-sm transition-all duration-300 hover:scale-[1.02] hover:border-blue-500/30 hover:bg-slate-900/80 hover:shadow-[0_0_20px_rgba(59,130,246,0.15)] cursor-default">
             <div className="absolute inset-x-16 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
             <p className="text-sm leading-relaxed text-slate-400">{profile.summary}</p>
           </div>

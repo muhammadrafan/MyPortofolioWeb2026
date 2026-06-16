@@ -164,7 +164,7 @@ export default function ItemDetailClient({ item }: { item: Item }) {
         cd ../{String(item.section.name).toLowerCase().replace(/\s+/g, '-')}
       </Link>
 
-      <div className="relative overflow-hidden rounded-2xl border border-slate-800/60 bg-slate-900/40 md:backdrop-blur-sm shadow-2xl">
+      <div className="relative overflow-hidden rounded-2xl border border-slate-800/60 bg-slate-900/40 shadow-2xl">
         <InstitutionBackground imageUrl={item.imageUrl} title={item.title} />
         
         {/* Title bar */}
@@ -261,6 +261,8 @@ export default function ItemDetailClient({ item }: { item: Item }) {
                 <img
                   src={viewingAtt.type === 'IMAGE' ? viewingAtt.url : viewingAtt.url.replace('/upload/', `/upload/pg_${pdfPage}/`).replace(/\.pdf$/i, '.jpg')}
                   alt={`Preview - Halaman ${pdfPage}`}
+                  loading="lazy"
+                  decoding="async"
                   className="relative max-h-[65vh] md:max-h-[70vh] max-w-full object-contain rounded-lg shadow-[0_0_60px_rgba(0,0,0,0.55)] border border-slate-800"
                   onError={() => { if (viewingAtt.type === 'DOCUMENT') { setMaxPage(pdfPage - 1); setPdfPage(pdfPage - 1); } }}
                 />

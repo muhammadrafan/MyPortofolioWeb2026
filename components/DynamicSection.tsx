@@ -76,6 +76,8 @@ function InstitutionFloatingImage({ imageUrl, title }: { imageUrl?: string | nul
       <img
         src={imageUrl}
         alt={`Logo ${title}`}
+        loading="lazy"
+        decoding="async"
         className="max-h-16 max-w-[140px] object-contain rounded-md opacity-90"
       />
     </div>
@@ -92,6 +94,8 @@ function InstitutionBackground({ imageUrl, title }: { imageUrl?: string | null; 
         src={imageUrl}
         alt=""
         aria-hidden="true"
+        loading="lazy"
+        decoding="async"
         className="absolute -left-8 top-1/2 -translate-y-1/2 h-36 w-auto object-contain
                    opacity-[0.04] grayscale invert
                    animate-drift-ltr"
@@ -101,6 +105,8 @@ function InstitutionBackground({ imageUrl, title }: { imageUrl?: string | null; 
         src={imageUrl}
         alt=""
         aria-hidden="true"
+        loading="lazy"
+        decoding="async"
         className="absolute -right-8 bottom-1/4 h-28 w-auto object-contain
                    opacity-[0.04] grayscale invert
                    animate-drift-rtl [animation-delay:4s]"
@@ -126,6 +132,8 @@ function AttachmentThumbnail({ attachment, onClick }: { attachment: any; onClick
       <img
         src={imgUrl}
         alt={attachment.title}
+        loading="lazy"
+        decoding="async"
         className="h-full w-full object-cover opacity-75 transition-all duration-300 group-hover:scale-110 group-hover:opacity-100"
         onError={(e) => (e.currentTarget.style.display = 'none')}
       />
@@ -227,10 +235,10 @@ export default function DynamicSection({ section, index }: { section: any; index
               {items.map((item: any) => (
                 <div
                   key={item.id}
-                  className="relative overflow-hidden rounded-2xl border border-slate-800/60 bg-slate-900/40 backdrop-blur-sm transition-all duration-500 hover:border-blue-500/20 hover:shadow-[0_0_30px_rgba(59,130,246,0.08)]"
+                  className="relative overflow-hidden rounded-2xl border border-slate-800/60 bg-slate-900/40 md:backdrop-blur-sm transition-all duration-500 hover:border-blue-500/20 hover:shadow-[0_0_30px_rgba(59,130,246,0.08)]"
                 >
                     <InstitutionBackground imageUrl={item.imageUrl} title={item.title} />
-                 {/* Title bar */}
+                    {/* Title bar */}
                     <div className="relative flex items-center gap-2 border-b border-slate-800/60 bg-slate-950/40 px-5 py-3">
                       <span className="h-2.5 w-2.5 rounded-full bg-red-500/60" />
                       <span className="h-2.5 w-2.5 rounded-full bg-amber-500/60" />
@@ -245,7 +253,7 @@ export default function DynamicSection({ section, index }: { section: any; index
 
                     {/* Hapus <InstitutionBanner> yang ada di sini */}
 
-                  <div className="space-y-8 p-6 md:p-8">
+                    <div className="space-y-8 p-6 md:p-8">
                     {sortByTimelineDesc(item.subItems).map((sub: any, si: number) => {
                       const attachmentsToDisplay = sub.attachments?.slice(0, 2) || [];
                       const hasMoreAttachments = (sub.attachments?.length || 0) > 2;
@@ -329,29 +337,26 @@ export default function DynamicSection({ section, index }: { section: any; index
                 return (
                   <div
                     key={item.id}
-                    className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-800/60 bg-slate-900/40 backdrop-blur-sm transition-all duration-700 hover:-translate-y-1.5 hover:border-blue-500/30 hover:shadow-[0_0_30px_rgba(59,130,246,0.12)] ${
+                    className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-800/60 bg-slate-900/40 md:backdrop-blur-sm transition-all duration-700 hover:-translate-y-1.5 hover:border-blue-500/30 hover:shadow-[0_0_30px_rgba(59,130,246,0.12)] ${
                       isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
                     }`}
                     style={{ transitionDelay: `${i * 100}ms` }}
                   >
-                      <InstitutionBackground imageUrl={item.imageUrl} title={item.title} />
+                    <InstitutionBackground imageUrl={item.imageUrl} title={item.title} />
                     {/* Garis aksen atas */}
                     <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-blue-500/0 via-emerald-500/70 to-blue-500/0 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
 
                     {/* Title bar */}
-                      <div className="relative flex items-center gap-2 border-b border-slate-800/60 px-5 py-3">
-                        <span className="h-2 w-2 rounded-full bg-slate-700 transition-colors duration-300 group-hover:bg-red-500/60" />
-                        <span className="h-2 w-2 rounded-full bg-slate-700 transition-colors duration-300 group-hover:bg-amber-500/60" />
-                        <span className="h-2 w-2 rounded-full bg-slate-700 transition-colors duration-300 group-hover:bg-emerald-500/60" />
-                        <span className="ml-2 truncate font-mono text-[11px] text-slate-500 max-w-[50%]">
-                          {item.title}
-                        </span>
+                    <div className="relative flex items-center gap-2 border-b border-slate-800/60 px-5 py-3">
+                      <span className="h-2 w-2 rounded-full bg-slate-700 transition-colors duration-300 group-hover:bg-red-500/60" />
+                      <span className="h-2 w-2 rounded-full bg-slate-700 transition-colors duration-300 group-hover:bg-amber-500/60" />
+                      <span className="h-2 w-2 rounded-full bg-slate-700 transition-colors duration-300 group-hover:bg-emerald-500/60" />
+                      <span className="ml-2 truncate font-mono text-[11px] text-slate-500 max-w-[50%]">
+                        {item.title}
+                      </span>
 
-                        {/* Logo mengambang di kanan */}
-                        <InstitutionFloatingImage imageUrl={item.imageUrl} title={item.title} />
-                      </div>
-
-                      {/* Hapus <InstitutionBanner> yang ada di sini */}
+                      <InstitutionFloatingImage imageUrl={item.imageUrl} title={item.title} />
+                    </div>
 
                     <div className="flex-1 p-5">
                       <h3 className="mb-4 text-xl font-bold line-clamp-2">
@@ -481,6 +486,8 @@ export default function DynamicSection({ section, index }: { section: any; index
                       : viewingAtt.url.replace('/upload/', `/upload/pg_${pdfPage}/`).replace(/\.pdf$/i, '.jpg')
                   }
                   alt={`Preview - Halaman ${pdfPage}`}
+                  loading="lazy"
+                  decoding="async"
                   className="relative max-h-[65vh] md:max-h-[70vh] max-w-full object-contain rounded-lg shadow-[0_0_60px_rgba(0,0,0,0.55)] border border-slate-800"
                   onError={() => {
                     if (viewingAtt.type === 'DOCUMENT') {
