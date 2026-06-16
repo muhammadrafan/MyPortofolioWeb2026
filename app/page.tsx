@@ -1,5 +1,6 @@
 // app/page.tsx
 import { prisma } from '@/lib/prisma';
+export const dynamic = 'force-dynamic';
 import HeroSection from '@/components/HeroSection';
 import DynamicSection from '@/components/DynamicSection';
 

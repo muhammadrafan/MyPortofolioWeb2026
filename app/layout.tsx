@@ -5,6 +5,7 @@ import "./globals.css";
 import { AuthProvider } from "./providers";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma"; // <-- Tambahkan import Prisma
+export const dynamic = 'force-dynamic';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
